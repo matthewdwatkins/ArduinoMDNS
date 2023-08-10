@@ -128,7 +128,7 @@ MDNS::MDNS(UDP& udp)
 
 MDNS::~MDNS()
 {
-	this->_udp->stop();
+   this->_udp->stop();
 }
 
 // return values:
@@ -136,20 +136,20 @@ MDNS::~MDNS()
 // 0 otherwise
 int MDNS::begin(const IPAddress& ip, const char* name)
 {
-	// if we were called very soon after the board was booted, we need to give the
-	// EthernetShield (WIZnet) some time to come up. Hence, we delay until millis() is at
-	// least 3000. This is necessary, so that if we need to add a service record directly
-	// after begin, the announce packet does not get lost in the bowels of the WIZnet chip.
-	while (millis() < 3000) delay(100);
+   // if we were called very soon after the board was booted, we need to give the
+   // EthernetShield (WIZnet) some time to come up. Hence, we delay until millis() is at
+   // least 3000. This is necessary, so that if we need to add a service record directly
+   // after begin, the announce packet does not get lost in the bowels of the WIZnet chip.
+   while (millis() < 3000) delay(100);
 
-	_ipAddress = ip;
+   _ipAddress = ip;
 
-	int statusCode = 0;
-	statusCode = this->setName(name);
-	if (statusCode)
-	statusCode = this->_udp->beginMulticast(mdnsMulticastIPAddr, MDNS_SERVER_PORT);
+   int statusCode = 0;
+   statusCode = this->setName(name);
+   if (statusCode)
+   statusCode = this->_udp->beginMulticast(mdnsMulticastIPAddr, MDNS_SERVER_PORT);
 
-	return statusCode;
+   return statusCode;
 }
 
 // return values:
@@ -227,9 +227,10 @@ int MDNS::isResolvingName()
    return (NULL != this->_resolveNames[0]);
 }
 
-void MDNS::setServiceFoundCallback(MDNSServiceFoundCallback newCallback)
+void MDNS::setServiceFoundCallback(MDNSServiceFoundCallback newCallback, void* user)
 {
    this->_serviceFoundCallback = newCallback;
+   this->_userPointer = user;
 }
 
 // return values:
@@ -558,7 +559,7 @@ MDNSError_t MDNS::_processMDNSQuery()
    if (0 == dnsHeader->queryResponse &&
        DNSOpQuery == dnsHeader->opCode &&
        MDNS_SERVER_PORT == this->_udp->remotePort())
-	  {
+     {
       // process an MDNS query
       int offset = sizeof(DNSHeader_t);
       uint8_t* buf = (uint8_t*)dnsHeader;
@@ -600,7 +601,7 @@ MDNSError_t MDNS::_processMDNSQuery()
          tLen = 0;
          do {
 
-        	memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
+         memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
             offset += 1;
 
             rLen = buf[0];
@@ -609,8 +610,8 @@ MDNSError_t MDNS::_processMDNSQuery()
             if (rLen > 128) {// handle DNS name compression, kinda, sorta
 
 
-            	memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
-            	offset += 1;
+               memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
+               offset += 1;
                
                for (j=0; j<NumMDNSServiceRecords+2; j++) {
                   if (servNamePos[j] && servNamePos[j] != buf[0]) {
@@ -672,7 +673,7 @@ MDNSError_t MDNS::_processMDNSQuery()
               DNSOpQuery == dnsHeader->opCode &&
               MDNS_SERVER_PORT == this->_udp->remotePort() &&
               (NULL != this->_resolveNames[0] || NULL != this->_resolveNames[1]))
-	     {
+        {
          int offset = sizeof(DNSHeader_t);
          uint8_t* buf = (uint8_t*)dnsHeader;
          int rLen = 0, tLen = 0;
@@ -732,14 +733,14 @@ MDNSError_t MDNS::_processMDNSQuery()
             tLen = 0;
                         
             do {
-            	memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
+               memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
                offset += 1;
                rLen = buf[0];
                tLen += 1;
             
                if (rLen > 128) { // handle DNS name compression, kinda, sorta...
 
-            	   memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
+                  memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
                   offset += 1;
 
                   for (j=0; j<2; j++) {
@@ -837,7 +838,7 @@ MDNSError_t MDNS::_processMDNSQuery()
                            if (0 == j && 4 == dataLen) {
                               // ok, this is the IP address. report it via callback.
 
-                        	   memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,4);
+                              memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,4);
                               
                               this->_finishedResolvingName((char*)this->_resolveNames[0],
                                                            (const byte*)buf);
@@ -854,8 +855,8 @@ MDNSError_t MDNS::_processMDNSQuery()
                               
                                  if (ptrName) {
 
-                                	 memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
-                                	 memcpy((uint8_t*)ptrName, (uint16_t*)(ptr+offset+1) ,l-1);
+                                  memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,1);
+                                  memcpy((uint8_t*)ptrName, (uint16_t*)(ptr+offset+1) ,l-1);
                                  
                                     if (buf[0] < l-1)
                                        ptrName[buf[0]] = '\0'; // this catches uncompressed names
@@ -883,7 +884,7 @@ MDNSError_t MDNS::_processMDNSQuery()
                               (0 == ptrLensCmp[j] && ptrNamesMatches[j]))) {
                            // we have found the matching SRV location packet to a previous SRV domain
 
-                        	memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,6);
+                           memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,6);
                            offset += 6;
 
                            //uint32_t ttl = ethutil_ntohl(*(uint32_t*)buf);
@@ -891,7 +892,7 @@ MDNSError_t MDNS::_processMDNSQuery()
 
                            if (dataLen >= 8) {
 
-                        	   memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,8);
+                              memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,8);
                               ptrPorts[j] = ethutil_ntohs(*(uint16_t*)&buf[4]);
                               
                               if (buf[6] > 128) { // target is a compressed name
@@ -913,7 +914,7 @@ MDNSError_t MDNS::_processMDNSQuery()
                               (0 == ptrLensCmp[j] && ptrNamesMatches[j]))) {
 
 
-                        	memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,6);
+                           memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset) ,6);
                            offset += 6;
 
                            //uint32_t ttl = ethutil_ntohl(*(uint32_t*)buf);
@@ -924,7 +925,7 @@ MDNSError_t MDNS::_processMDNSQuery()
                               servTxt[j] = (uint8_t*)my_malloc(dataLen+1);
                               if (NULL != servTxt[j]) {
 
-                            	  memcpy((uint8_t*)servTxt[j], (uint16_t*)(ptr+offset) ,dataLen);
+                                memcpy((uint8_t*)servTxt[j], (uint16_t*)(ptr+offset) ,dataLen);
                               
                                  // zero-terminate
                                  servTxt[j][dataLen] = '\0';
@@ -946,7 +947,7 @@ MDNSError_t MDNS::_processMDNSQuery()
 
                            uint16_t dataLen = ethutil_ntohs(*(uint16_t*)&buf[4]);
                            if (4 == dataLen) {
-                        	  memcpy((uint8_t*)&servIPs[j][1], (uint16_t*)(ptr+offset) ,4);
+                             memcpy((uint8_t*)&servIPs[j][1], (uint16_t*)(ptr+offset) ,4);
                            }
                            offset += dataLen;
                            packetHandled = 1;
@@ -959,9 +960,9 @@ MDNSError_t MDNS::_processMDNSQuery()
                
                // eat the answer
                if (!packetHandled) {
-            	   offset += 4; // ttl
-            	   memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset), 2);
-            	   offset += 2 + ethutil_ntohs(*(uint16_t*)buf); // skip over content
+                  offset += 4; // ttl
+                  memcpy((uint8_t*)buf, (uint16_t*)(ptr+offset), 2);
+                  offset += 2 + ethutil_ntohs(*(uint16_t*)buf); // skip over content
                }
             }
          }
@@ -999,7 +1000,8 @@ MDNSError_t MDNS::_processMDNSQuery()
                                                 (const char*)ptrNames[i],
                                                 IPAddress((const byte*)ipAddr),
                                                 (unsigned short)ptrPorts[i],
-                                                (const char*)servTxt[i]);
+                                                (const char*)servTxt[i],
+                                                this->_userPointer);
                   }
                }
             *p = '.';
@@ -1082,7 +1084,8 @@ void MDNS::run()
                                               NULL,
                                               IPAddress(),
                                               0,
-                                              NULL);
+                                              NULL,
+                                              this->_userPointer);
                }
             }
                
@@ -1134,7 +1137,7 @@ int MDNS::addServiceRecord(const char* name, uint16_t port,
                                            MDNSServiceProtocol_t proto)
 {
 #if defined(__MK20DX128__) || defined(__MK20DX256__)
-	 return this->addServiceRecord(name, port, proto, NULL); //works for Teensy 3 (32-bit Arm Cortex)
+    return this->addServiceRecord(name, port, proto, NULL); //works for Teensy 3 (32-bit Arm Cortex)
 #else
    return this->addServiceRecord(name, port, proto, ""); //works for Teensy 2 (8-bit Atmel)
 #endif
@@ -1284,7 +1287,7 @@ void MDNS::_writeDNSName(const uint8_t* name, uint16_t* pPtr,
          ++p1;
 
       if (len != bufSize) {
-    	  this->_udp->write((uint8_t*)buf, bufSize-len);
+        this->_udp->write((uint8_t*)buf, bufSize-len);
          ptr += bufSize-len;
       }
    }

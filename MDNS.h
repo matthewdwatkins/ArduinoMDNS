@@ -69,7 +69,7 @@ typedef struct _MDNSServiceRecord_t {
 
 typedef void (*MDNSNameFoundCallback)(const char*, IPAddress);
 typedef void (*MDNSServiceFoundCallback)(const char*, MDNSServiceProtocol_t, const char*,
-                                         IPAddress, unsigned short, const char*);
+                                         IPAddress, unsigned short, const char*, void*);
 
 #define  NumMDNSServiceRecords   (8)
 
@@ -84,6 +84,8 @@ private:
    uint8_t*             _name;
    MDNSServiceRecord_t* _serviceRecords[NumMDNSServiceRecords];
    unsigned long        _lastAnnounceMillis;
+
+   void*                _userPointer;
    
    uint8_t*             _resolveNames[2];
    unsigned long        _resolveLastSendMillis[2];
@@ -142,7 +144,7 @@ public:
    void cancelResolveName();
    int isResolvingName();
    
-   void setServiceFoundCallback(MDNSServiceFoundCallback newCallback);
+   void setServiceFoundCallback(MDNSServiceFoundCallback newCallback, void* user);
    int startDiscoveringService(const char* serviceName, MDNSServiceProtocol_t proto,
                                unsigned long timeout);
    void stopDiscoveringService();
